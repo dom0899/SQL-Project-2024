@@ -58,6 +58,16 @@ WHERE YEAR(date_from) BETWEEN 2006 AND 2018 AND YEAR(date_to) BETWEEN 2006 AND 2
 GROUP BY 'year'
 ORDER BY 'year';
 
+-- view GDP
+
+CREATE VIEW v_gdp AS 
+SELECT	
+	year,
+	country,
+	GDP
+FROM economies e 
+WHERE country LIKE '%czech%' AND year BETWEEN 2006 AND 2018
+ORDER BY year;
 
 
 
