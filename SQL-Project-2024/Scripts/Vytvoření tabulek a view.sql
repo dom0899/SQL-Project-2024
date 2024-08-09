@@ -31,6 +31,32 @@ GROUP BY payroll_year
 ORDER BY payroll_year;
 
 
+-- views prices
+
+CREATE VIEW v_price_by_category AS
+SELECT
+		YEAR(date_from) AS 'year',
+		category_code,
+		CONCAT(name, '   ', price_unit) AS category_name,
+		AVG(value) AS average_price_by_category
+FROM czechia_price
+INNER JOIN czechia_price_category
+      ON czechia_price.category_code = czechia_price_category.code
+WHERE YEAR(date_from) BETWEEN 2006 AND 2018 AND YEAR(date_to) BETWEEN 2006 AND 2018
+GROUP BY 'year', category_code, name
+ORDER BY 'year';
+
+
+
+
+CREATE VIEW v_price AS
+SELECT
+		YEAR(date_from) AS 'year',
+		AVG(value) AS average_price
+FROM czechia_price
+WHERE YEAR(date_from) BETWEEN 2006 AND 2018 AND YEAR(date_to) BETWEEN 2006 AND 2018
+GROUP BY 'year'
+ORDER BY 'year';
 
 
 
