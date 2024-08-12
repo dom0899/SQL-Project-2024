@@ -130,26 +130,84 @@ CREATE TABLE t_dominik_drazan_project_SQL_secondary_final AS (
 			WHERE continent = 'Europe')hc
 		ON he.country = hc.country);
 			
-	
-	
-	
-
-	
-
-	
 
 	
 	
 	
 	
-	
+
+-- Sada SQL dotazů na VÝZKUMNÉ OTÁZKY	
 
 	
 
+	
+-- 1) Rostou v průběhu let mzdy ve všech odvětvích,
+--  nebo v některých klesají?	
+	
 
 
+SELECT 
+	s_2006.industry,
+	avg(s_2006.average_salary_2006) AS avg_salary_2006,
+	avg(s_2008.average_salary_2008) AS avg_salary_2008,
+	avg(s_2010.average_salary_2010) AS avg_salary_2010,
+	avg(s_2012.average_salary_2012) AS avg_salary_2012,
+	avg(s_2014.average_salary_2014) AS avg_salary_2014,
+	avg(s_2018.average_salary_2018) AS avg_salary_2018,
+CASE WHEN avg(s_2018.average_salary_2018) > avg(s_2014.average_salary_2014) THEN 'increased_in_2018'
+		WHEN avg(s_2014.average_salary_2014) > avg(s_2012.average_salary_2012) THEN 'increased_in_2014'
+		WHEN avg(s_2012.average_salary_2012) > avg(s_2010.average_salary_2010) THEN 'increased_in_2012'
+		WHEN avg(s_2010.average_salary_2010) > avg(s_2008.average_salary_2008) THEN 'increased_in_2010'
+		WHEN avg(s_2008.average_salary_2008) > avg(s_2006.average_salary_2006) THEN 'increased_in_2008'
+		ELSE 'reduced'
+		END AS 'course of years'
+FROM (			
+			SELECT DISTINCT industry,
+					average_salary AS average_salary_2006, 
+					`year` 
+			FROM t_dominik_drazan_project_sql_primary_final pfl
+			WHERE YEAR = '2006') s_2006
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2008, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2008') s_2008
+	ON s_2006.industry = s_2008.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2010, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2010') s_2010
+	ON s_2008.industry = s_2010.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2012, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2012') s_2012
+	ON s_2010.industry = s_2012.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2014, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2014') s_2014
+	ON s_2012.industry = s_2014.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2018, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2018') s_2018
+	ON s_2014.industry = s_2018.industry
+GROUP BY s_2006.`year`,
+		s_2006.industry;
 
 
+	
+-- vytvořeny indexy pro rychlejší spuštění dotazu
 
 
 
