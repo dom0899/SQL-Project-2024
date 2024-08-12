@@ -10,7 +10,7 @@ CREATE VIEW v_payroll_by_category AS
 SELECT 	
 	name AS category_name,
 	round(avg(value), 2) AS average_salary_by_category,
-	payroll_year AS 'year',
+	payroll_year AS rok,
 	industry_branch_code AS category_code
 FROM czechia_payroll 
 JOIN czechia_payroll_industry_branch  
@@ -19,11 +19,10 @@ WHERE value_type_code = '5958'
 GROUP BY industry_branch_code, payroll_year, name 
 ORDER BY payroll_year;
 
-
  
 CREATE VIEW v_payroll AS 
 SELECT 
-	payroll_year AS 'year',
+	payroll_year AS rok,
 	round(avg(value), 2) AS average_salary
 FROM czechia_payroll 
 WHERE value_type_code = '5958'
@@ -35,7 +34,7 @@ ORDER BY payroll_year;
 
 CREATE VIEW v_price_by_category AS
 SELECT
-		YEAR(date_from) AS 'year',
+		YEAR(date_from) AS rok,
 		category_code,
 		CONCAT(name, '   ', price_unit) AS category_name,
 		AVG(value) AS average_price_by_category
@@ -43,20 +42,20 @@ FROM czechia_price
 INNER JOIN czechia_price_category
       ON czechia_price.category_code = czechia_price_category.code
 WHERE YEAR(date_from) BETWEEN 2006 AND 2018 AND YEAR(date_to) BETWEEN 2006 AND 2018
-GROUP BY 'year', category_code, name
-ORDER BY 'year';
+GROUP BY rok, category_code, name
+ORDER BY rok;
 
 
 
 
 CREATE VIEW v_price AS
 SELECT
-		YEAR(date_from) AS 'year',
+		YEAR(date_from) AS rok,
 		AVG(value) AS average_price
 FROM czechia_price
 WHERE YEAR(date_from) BETWEEN 2006 AND 2018 AND YEAR(date_to) BETWEEN 2006 AND 2018
-GROUP BY 'year'
-ORDER BY 'year';
+GROUP BY rok
+ORDER BY rok;
 
 -- view GDP
 
@@ -69,6 +68,33 @@ FROM economies e
 WHERE country LIKE '%czech%' AND year BETWEEN 2006 AND 2018
 ORDER BY year;
 
+
+
+
+
+
+
+
+
+
+-- Vytvoření tabulky t_dominik_drazan_project_SQL_primary_final
+
+CREATE TABLE t_dominik_drazan_project_SQL_primary_final AS 
+	SELECT 
+		cpc.name AS food_category,
+		cp.value AS food_price,
+		cpay.value AS average_salary,
+		cpay.payroll_year AS 'year',
+		cpib.name AS industry
+	FROM czechia_price cp 
+	JOIN czechia_payroll cpay
+		ON cpay.payroll_year = year(cp.date_from)
+		AND cpay.value_type_code = 5958 
+		AND cp.region_code IS NULL 
+	JOIN czechia_price_category cpc 
+		ON cp.category_code = cpc.code
+	JOIN czechia_payroll_industry_branch cpib 
+		ON cpay.industry_branch_code = cpib.code;
 
 
 
