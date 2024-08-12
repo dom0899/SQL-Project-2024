@@ -100,12 +100,51 @@ CREATE TABLE t_dominik_drazan_project_SQL_primary_final AS
 
 
 
+-- Vytvoření tabulky t_dominik_drazan_project_SQL_secondary_final 
 
 
 
 
+	
+CREATE TABLE t_dominik_drazan_project_SQL_secondary_final AS (
+	SELECT hc.country AS territory, 
+		 	hc.continent AS main_territory,
+		 	he.GDP,
+		 	he.`year`,
+		 	he.population,
+		 	he.gini
+	FROM (
+				SELECT 	
+					country, 
+					GDP,
+					`year`,
+					population,
+					gini 
+				FROM economies e
+				WHERE `year` BETWEEN 2006 AND 2018)he
+	LEFT JOIN (
+				SELECT 
+				country,
+				continent 
+			FROM countries c
+			WHERE continent = 'Europe')hc
+		ON he.country = hc.country);
+			
+	
+	
+	
 
+	
 
+	
+
+	
+	
+	
+	
+	
+
+	
 
 
 
