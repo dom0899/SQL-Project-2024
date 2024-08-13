@@ -209,5 +209,58 @@ GROUP BY s_2006.`year`,
 	
 -- vytvořeny indexy pro rychlejší spuštění dotazu
 
+	
+	
+	
+	
+	
+	
+	
+-- 2) Kolik je možné si koupit litrů mléka a kilogramů chleba
+-- za první a poslední srovnatelné období v dostupných 
+-- datech cen a mezd?	
+	
+	
+	
+
+	
+SELECT 
+	food_category,
+	avg(average_salary) AS average_salary,
+	avg(food_price) AS average_price,
+	avg(average_salary)/avg(food_price) AS quantity,
+	`year` 
+FROM t_dominik_drazan_project_sql_primary_final prmfnl	
+WHERE food_category IN ('Chléb konzumní kmínový','Mléko polotučné pasterované')
+	AND `year` IN ('2006','2018')
+GROUP BY `year`,
+		food_category;	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 
