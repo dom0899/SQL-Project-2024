@@ -242,7 +242,62 @@ GROUP BY `year`,
 	
 	
 	
+-- 3) Která kategorie potravin zdražuje nejpomaleji
+--  (je u ní nejnižší percentuální meziroční nárůst)?
+	
+	
+	
+	
+	
+WITH i_year AS (	
+		SELECT food_category,
+				avg(food_price) AS average_year_price,
+				`year` 
+		FROM t_dominik_drazan_project_sql_primary_final prmfnl
+		GROUP BY food_category,
+				`year`),
+	i_last_year AS (	
+		SELECT 
+		food_category,
+		avg(food_price) AS average_last_year_price,
+		YEAR+1 AS last_year
+	FROM t_dominik_drazan_project_sql_primary_final prmfnl	
+	WHERE food_price IS NOT NULL
+	GROUP BY food_category,
+				last_year)
+SELECT 
+	i_year.food_category,
+	i_year.`year`,
+	last_year,
+	round((average_year_price - average_last_year_price)/average_year_price*100,2) AS percentage_increase
+FROM i_year
+JOIN i_last_year
+	ON i_year.food_category = i_last_year.food_category
+	AND i_year.`year` = i_last_year.last_year
+ORDER BY percentage_increase;
+	
+	
 
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+	
+
+
+	
+	
 	
 	
 	
