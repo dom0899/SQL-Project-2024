@@ -284,6 +284,56 @@ ORDER BY percentage_increase;
 
 
 
+-- 4) Existuje rok, ve kterém byl meziroční nárůst 
+-- cen potravin výrazně vyšší než růst mezd (větší než 10 %)?
+
+
+
+
+
+WITH i_year AS (
+		SELECT
+				avg(food_price) AS average_year_price,
+				avg(average_salary) AS average_year_salary,
+				`year` 
+		FROM t_dominik_drazan_project_sql_primary_final prmfnl
+		WHERE average_salary IS NOT NULL 
+			AND food_price IS NOT NULL 
+		GROUP BY `year`),
+	i_last_year AS (
+		SELECT 
+				avg(food_price) AS average_last_year_price,
+				avg(average_salary) AS average_last_year_salary,
+				`year`+1 AS last_year
+	FROM t_dominik_drazan_project_sql_primary_final prmfnl
+	WHERE average_salary IS NOT NULL 
+		AND food_price IS NOT NULL 
+	GROUP BY last_year)
+SELECT 
+	i_year.`year`,
+	last_year,
+	round((average_year_price - average_last_year_price)/average_year_price * 100,2) AS price_increase,
+	round((average_year_salary - average_last_year_salary)/average_year_salary * 100,2) AS salary_increase,
+	CASE WHEN (average_year_price - average_last_year_price)/average_year_price * 100 - (average_year_salary - average_last_year_salary)/average_year_salary * 100>10 THEN 'percentage increase over 10'
+		ELSE 'reduction under 10'
+		END AS increase
+FROM i_year
+JOIN i_last_year
+	ON i_year.`year` = i_last_year.last_year;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
