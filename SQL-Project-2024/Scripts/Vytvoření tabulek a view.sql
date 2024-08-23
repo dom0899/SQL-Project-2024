@@ -327,21 +327,70 @@ JOIN i_last_year
 
 
 
+-- 5) Má výška HDP vliv na změny ve mzdách a cenách potravin?
+--  Neboli, pokud HDP vzroste výrazněji v jednom roce, 
+--  projeví se to na cenách potravin či mzdách ve stejném
+--  nebo násdujícím roce výraznějším růstem? 
 
 
 
 
 
-
-
-
-
-
-
-
+WITH i_year AS (
+		SELECT 
+			avg(average_salary) AS average_year_salary,
+			avg(food_price) AS average_year_price,
+			`year` 
+		FROM t_dominik_drazan_project_sql_primary_final prmfnl	
+		WHERE food_price IS NOT NULL 
+			AND average_salary IS NOT NULL 
+		GROUP BY `year`),
+	i_last_year AS (	
+		SELECT 
+		avg(average_salary) AS average_last_year_salary,
+		avg(food_price) AS average_last_year_price,
+		`year`+1 AS last_year
+	FROM t_dominik_drazan_project_sql_primary_final prmfnl
+	WHERE average_salary IS NOT NULL 
+		AND food_price IS NOT NULL 
+	GROUP BY last_year),
+	i_year_GDP AS (
+		SELECT 
+		avg(GDP) AS average_year_gdp,
+		`year` 
+	FROM v_gdp
+	WHERE GDP IS NOT NULL 
+	GROUP BY `year`),
+	i_last_year_GDP AS (
+		SELECT 
+		avg(GDP) AS average_last_year_gdp,
+		`year`+1 AS pre_year
+	FROM v_gdp 
+	WHERE GDP IS NOT NULL 
+	GROUP BY pre_year)
+SELECT 
+	i_year.`year`,
+	last_year,
+	round((average_year_price - average_last_year_price)/average_year_price * 100,2) AS percentage_price_increase,
+	round((average_year_salary - average_last_year_salary)/average_year_salary * 100,2) AS percentage_salary_increase,
+	round((average_year_gdp - average_last_year_gdp)/average_year_gdp * 100,2) AS percentage_GDP_increase
+FROM i_year
+JOIN i_last_year
+	ON i_year.`year` = i_last_year.last_year
+JOIN i_year_GDP
+	ON i_year.`year` = i_year_GDP.`year`
+JOIN i_last_year_GDP
+	ON i_year.`year` = i_last_year_GDP.pre_year;
+	
 
 	
 	
+
+	
+	
+
+
+
 	
 	
 
