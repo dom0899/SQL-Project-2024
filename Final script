@@ -1,0 +1,291 @@
+-- Vytvoření tabulky t_dominik_drazan_project_SQL_primary_final
+
+CREATE TABLE t_dominik_drazan_project_SQL_primary_final AS 
+	SELECT 
+		cpc.name AS food_category,
+		cp.value AS food_price,
+		cpay.value AS average_salary,
+		cpay.payroll_year AS 'year',
+		cpib.name AS industry
+	FROM czechia_price cp 
+	JOIN czechia_payroll cpay
+		ON cpay.payroll_year = year(cp.date_from)
+		AND cpay.value_type_code = 5958 
+		AND cp.region_code IS NULL 
+	JOIN czechia_price_category cpc 
+		ON cp.category_code = cpc.code
+	JOIN czechia_payroll_industry_branch cpib 
+		ON cpay.industry_branch_code = cpib.code;
+
+
+
+
+-- Vytvoření tabulky t_dominik_drazan_project_SQL_secondary_final 
+
+
+	
+CREATE TABLE t_dominik_drazan_project_SQL_secondary_final AS (
+	SELECT hc.country AS territory, 
+		 	hc.continent AS main_territory,
+		 	he.GDP,
+		 	he.`year`,
+		 	he.population,
+		 	he.gini
+	FROM (
+				SELECT 	
+					country, 
+					GDP,
+					`year`,
+					population,
+					gini 
+				FROM economies e
+				WHERE `year` BETWEEN 2006 AND 2018)he
+	LEFT JOIN (
+				SELECT 
+				country,
+				continent 
+			FROM countries c
+			WHERE continent = 'Europe')hc
+		ON he.country = hc.country);
+
+
+
+
+-- Sada SQL dotazů na VÝZKUMNÉ OTÁZKY	
+
+	
+
+	
+-- 1) Rostou v průběhu let mzdy ve všech odvětvích,
+--  nebo v některých klesají?	
+	
+
+
+SELECT 
+	s_2006.industry,
+	avg(s_2006.average_salary_2006) AS avg_salary_2006,
+	avg(s_2008.average_salary_2008) AS avg_salary_2008,
+	avg(s_2010.average_salary_2010) AS avg_salary_2010,
+	avg(s_2012.average_salary_2012) AS avg_salary_2012,
+	avg(s_2014.average_salary_2014) AS avg_salary_2014,
+	avg(s_2018.average_salary_2018) AS avg_salary_2018,
+CASE WHEN avg(s_2018.average_salary_2018) > avg(s_2014.average_salary_2014) THEN 'increased_in_2018'
+		WHEN avg(s_2014.average_salary_2014) > avg(s_2012.average_salary_2012) THEN 'increased_in_2014'
+		WHEN avg(s_2012.average_salary_2012) > avg(s_2010.average_salary_2010) THEN 'increased_in_2012'
+		WHEN avg(s_2010.average_salary_2010) > avg(s_2008.average_salary_2008) THEN 'increased_in_2010'
+		WHEN avg(s_2008.average_salary_2008) > avg(s_2006.average_salary_2006) THEN 'increased_in_2008'
+		ELSE 'reduced'
+		END AS 'course of years'
+FROM (			
+			SELECT DISTINCT industry,
+					average_salary AS average_salary_2006, 
+					`year` 
+			FROM t_dominik_drazan_project_sql_primary_final pfl
+			WHERE YEAR = '2006') s_2006
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2008, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2008') s_2008
+	ON s_2006.industry = s_2008.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2010, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2010') s_2010
+	ON s_2008.industry = s_2010.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2012, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2012') s_2012
+	ON s_2010.industry = s_2012.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2014, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2014') s_2014
+	ON s_2012.industry = s_2014.industry
+LEFT JOIN (
+			SELECT DISTINCT industry,
+								average_salary AS average_salary_2018, 
+								`year` 
+						FROM t_dominik_drazan_project_sql_primary_final pfl
+						WHERE YEAR = '2018') s_2018
+	ON s_2014.industry = s_2018.industry
+GROUP BY s_2006.`year`,
+		s_2006.industry;
+
+
+-- vytvořeny indexy pro rychlejší spuštění dotazu
+
+
+
+
+
+	
+	
+
+-- 2) Kolik je možné si koupit litrů mléka a kilogramů chleba
+-- za první a poslední srovnatelné období v dostupných 
+-- datech cen a mezd?	
+	
+	
+	
+	
+SELECT 
+	food_category,
+	avg(average_salary) AS average_salary,
+	avg(food_price) AS average_price,
+	avg(average_salary)/avg(food_price) AS quantity,
+	`year` 
+FROM t_dominik_drazan_project_sql_primary_final prmfnl	
+WHERE food_category IN ('Chléb konzumní kmínový','Mléko polotučné pasterované')
+	AND `year` IN ('2006','2018')
+GROUP BY `year`,
+		food_category;	
+	
+	
+	
+	
+	
+	
+	
+-- 3) Která kategorie potravin zdražuje nejpomaleji
+--  (je u ní nejnižší percentuální meziroční nárůst)?
+	
+	
+	
+	
+	
+WITH i_year AS (	
+		SELECT food_category,
+				avg(food_price) AS average_year_price,
+				`year` 
+		FROM t_dominik_drazan_project_sql_primary_final prmfnl
+		GROUP BY food_category,
+				`year`),
+	i_last_year AS (	
+		SELECT 
+		food_category,
+		avg(food_price) AS average_last_year_price,
+		YEAR+1 AS last_year
+	FROM t_dominik_drazan_project_sql_primary_final prmfnl	
+	WHERE food_price IS NOT NULL
+	GROUP BY food_category,
+				last_year)
+SELECT 
+	i_year.food_category,
+	i_year.`year`,
+	last_year,
+	round((average_year_price - average_last_year_price)/average_year_price*100,2) AS percentage_increase
+FROM i_year
+JOIN i_last_year
+	ON i_year.food_category = i_last_year.food_category
+	AND i_year.`year` = i_last_year.last_year
+ORDER BY percentage_increase;
+
+
+
+
+
+-- 4) Existuje rok, ve kterém byl meziroční nárůst 
+-- cen potravin výrazně vyšší než růst mezd (větší než 10 %)?
+
+
+
+
+
+WITH i_year AS (
+		SELECT
+				avg(food_price) AS average_year_price,
+				avg(average_salary) AS average_year_salary,
+				`year` 
+		FROM t_dominik_drazan_project_sql_primary_final prmfnl
+		WHERE average_salary IS NOT NULL 
+			AND food_price IS NOT NULL 
+		GROUP BY `year`),
+	i_last_year AS (
+		SELECT 
+				avg(food_price) AS average_last_year_price,
+				avg(average_salary) AS average_last_year_salary,
+				`year`+1 AS last_year
+	FROM t_dominik_drazan_project_sql_primary_final prmfnl
+	WHERE average_salary IS NOT NULL 
+		AND food_price IS NOT NULL 
+	GROUP BY last_year)
+SELECT 
+	i_year.`year`,
+	last_year,
+	round((average_year_price - average_last_year_price)/average_year_price * 100,2) AS price_increase,
+	round((average_year_salary - average_last_year_salary)/average_year_salary * 100,2) AS salary_increase,
+	CASE WHEN (average_year_price - average_last_year_price)/average_year_price * 100 - (average_year_salary - average_last_year_salary)/average_year_salary * 100>10 THEN 'percentage increase over 10'
+		ELSE 'reduction under 10'
+		END AS increase
+FROM i_year
+JOIN i_last_year
+	ON i_year.`year` = i_last_year.last_year;
+
+
+
+
+
+
+-- 5) Má výška HDP vliv na změny ve mzdách a cenách potravin?
+--  Neboli, pokud HDP vzroste výrazněji v jednom roce, 
+--  projeví se to na cenách potravin či mzdách ve stejném
+--  nebo násdujícím roce výraznějším růstem? 
+
+
+
+
+
+WITH i_year AS (
+		SELECT 
+			avg(average_salary) AS average_year_salary,
+			avg(food_price) AS average_year_price,
+			`year` 
+		FROM t_dominik_drazan_project_sql_primary_final prmfnl	
+		WHERE food_price IS NOT NULL 
+			AND average_salary IS NOT NULL 
+		GROUP BY `year`),
+	i_last_year AS (	
+		SELECT 
+		avg(average_salary) AS average_last_year_salary,
+		avg(food_price) AS average_last_year_price,
+		`year`+1 AS last_year
+	FROM t_dominik_drazan_project_sql_primary_final prmfnl
+	WHERE average_salary IS NOT NULL 
+		AND food_price IS NOT NULL 
+	GROUP BY last_year),
+	i_year_GDP AS (
+		SELECT 
+		avg(GDP) AS average_year_gdp,
+		`year` 
+	FROM v_gdp
+	WHERE GDP IS NOT NULL 
+	GROUP BY `year`),
+	i_last_year_GDP AS (
+		SELECT 
+		avg(GDP) AS average_last_year_gdp,
+		`year`+1 AS pre_year
+	FROM v_gdp 
+	WHERE GDP IS NOT NULL 
+	GROUP BY pre_year)
+SELECT 
+	i_year.`year`,
+	last_year,
+	round((average_year_price - average_last_year_price)/average_year_price * 100,2) AS percentage_price_increase,
+	round((average_year_salary - average_last_year_salary)/average_year_salary * 100,2) AS percentage_salary_increase,
+	round((average_year_gdp - average_last_year_gdp)/average_year_gdp * 100,2) AS percentage_GDP_increase
+FROM i_year
+JOIN i_last_year
+	ON i_year.`year` = i_last_year.last_year
+JOIN i_year_GDP
+	ON i_year.`year` = i_year_GDP.`year`
+JOIN i_last_year_GDP
+	ON i_year.`year` = i_last_year_GDP.pre_year;
